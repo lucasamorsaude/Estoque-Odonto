@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controle de Estoque - Relatório PDF</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo-placeholder">
+                <i class="fas fa-warehouse"></i> LOGO EMPRESA
+            </div>
+            <h1 class="title">CONTROLE DE ESTOQUE MANUAL</h1>
+            <p class="subtitle">Relatório de itens em estoque e necessidades de compra</p>
+        </div>
+
+        <div class="controls">
+            <div>
+                <button class="btn btn-primary" id="loadDataBtn">
+                    <i class="fas fa-sync-alt"></i> Carregar Dados
+                </button>
+                <button class="btn btn-success" id="generatePDFBtn">
+                    <i class="fas fa-file-pdf"></i> Gerar PDF
+                </button>
+                <button class="btn btn-danger" id="clearAllBtn">
+                    <i class="fas fa-trash-alt"></i> Limpar Tudo
+                </button>
+            </div>
+            <div class="data-info">
+                <i class="fas fa-database"></i>
+                <span id="itemCount">0 itens carregados</span>
+            </div>
+        </div>
+
+        <div class="loading" id="loading">
+            <i class="fas fa-spinner fa-spin"></i> Carregando dados da planilha...
+        </div>
+
+        <div class="table-container" id="tableContainer">
+            <!-- Tabela será gerada dinamicamente pelo JavaScript -->
+        </div>
+
+        <div class="footer">
+            <div class="date-section">
+                <label for="reportDate">Data do Relatório:</label>
+                <input type="date" id="reportDate" class="date-input" value="">
+            </div>
+            <div class="signature-section">
+                <div class="signature-line"></div>
+                <p class="signature-text">Assinatura do Responsável</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts separados -->
+    <script src="data.js"></script>
+    <script src="script.js"></script>
+    <script src="pdf-generator.js"></script>
+    
+    <!-- Script de inicialização -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Inicializa a aplicação
+            InventoryApp.init();
+        });
+    </script>
+</body>
+</html>
