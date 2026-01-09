@@ -2,6 +2,11 @@
 const TableRenderer = {
     // Renderizar a tabela com os dados
     renderTable() {
+        if (!DataManager.itemsData || DataManager.itemsData.length === 0) {
+            this.showEmptyTable();
+            return;
+        }
+        
         const tableContainer = document.getElementById('tableContainer');
         const totalPages = Math.ceil(DataManager.itemsData.length / DataManager.itemsPerPage);
         const startIndex = (DataManager.currentPage - 1) * DataManager.itemsPerPage;
@@ -9,6 +14,10 @@ const TableRenderer = {
         const pageItems = DataManager.itemsData.slice(startIndex, endIndex);
         
         let tableHTML = `
+            <div style="margin-bottom: 15px; padding: 10px; background-color: #f8f9fa; border-radius: 5px;">
+                <strong>Página ${DataManager.currentPage} de ${totalPages}</strong> | 
+                Mostrando ${startIndex + 1} a ${endIndex} de ${DataManager.itemsData.length} itens
+            </div>
             <table>
                 <thead>
                     <tr>
@@ -27,7 +36,8 @@ const TableRenderer = {
         
         pageItems.forEach((item, index) => {
             const globalIndex = startIndex + index;
-            const needsReorder = (item.updatedStock || item.currentStock) <= item.minStock;
+            const currentValue = item.updatedStock || item.currentStock;
+            const needsReorder = currentValue <= item.minStock;
             const rowClass = needsReorder ? 'needs-reorder' : '';
             
             tableHTML += `
@@ -42,7 +52,7 @@ const TableRenderer = {
                     </td>
                     <td>
                         <input type="number" id="updatedQty-${globalIndex}" 
-                               min="0" value="${item.updatedStock || item.currentStock}" 
+                               min="0" value="${currentValue}" 
                                disabled onchange="TableRenderer.updateItem(${globalIndex})">
                     </td>
                     <td>
@@ -70,12 +80,12 @@ const TableRenderer = {
         // Adicionar controles de paginação se necessário
         if (totalPages > 1) {
             tableHTML += `
-                <div style="display: flex; justify-content: center; margin-top: 20px; gap: 10px;">
+                <div class="pagination-controls">
                     <button class="btn btn-primary" onclick="TableRenderer.changePage(${DataManager.currentPage - 1})" 
                             ${DataManager.currentPage === 1 ? 'disabled' : ''}>
                         <i class="fas fa-chevron-left"></i> Anterior
                     </button>
-                    <span style="padding: 10px;">
+                    <span class="page-info">
                         Página ${DataManager.currentPage} de ${totalPages}
                     </span>
                     <button class="btn btn-primary" onclick="TableRenderer.changePage(${DataManager.currentPage + 1})" 
@@ -87,6 +97,21 @@ const TableRenderer = {
         }
         
         tableContainer.innerHTML = tableHTML;
+    },
+    
+    // Mostrar tabela vazia
+    showEmptyTable() {
+        const tableContainer = document.getElementById('tableContainer');
+        tableContainer.innerHTML = `
+            <div style="text-align: center; padding: 40px; background-color: #f8f9fa; border-radius: 10px;">
+                <i class="fas fa-box-open" style="font-size: 48px; color: #bdc3c7; margin-bottom: 20px;"></i>
+                <h3 style="color: #7f8c8d;">Nenhum item carregado</h3>
+                <p style="color: #95a5a6;">Clique em "Carregar Dados" para começar.</p>
+                <button class="btn btn-primary" onclick="DataManager.loadData()" style="margin-top: 20px;">
+                    <i class="fas fa-sync-alt"></i> Carregar Dados
+                </button>
+            </div>
+        `;
     },
     
     // Mudar de página
@@ -144,6 +169,8 @@ const TableRenderer = {
 // Objeto principal da aplicação
 const InventoryApp = {
     init() {
+        console.log('Inicializando aplicação de estoque...');
+        
         // Inicializar dados
         DataManager.init();
         

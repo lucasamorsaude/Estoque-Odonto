@@ -1,150 +1,139 @@
-// pdf-generator.js - Lógica de geração de PDF
+// pdf-generator.js - Versão simplificada
 const PDFGenerator = {
-    // Gerar PDF com todos os dados
+    // Gerar PDF
     async generatePDF() {
-        // Coletar todos os dados atualizados
-        this.saveAllCurrentData();
-        
-        // Preparar dados para o relatório
+        // Coletar dados
         const reportData = DataManager.collectReportData();
         
+        // Mostrar loading
+        const loadingElement = document.getElementById('loading');
+        loadingElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Preparando relatório...';
+        loadingElement.style.display = 'block';
+        
+        // Se estiver em modo local, usar impressão do navegador
+        if (AppConfig.IS_LOCAL_FILE) {
+            loadingElement.style.display = 'none';
+            this.generateLocalPDF(reportData);
+            return;
+        }
+        
+        // Se estiver online, tentar usar o Google Apps Script
         try {
-            // Mostrar loading
-            const loadingElement = document.getElementById('loading');
-            loadingElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Gerando PDF...';
-            loadingElement.style.display = 'block';
-            
-            // Enviar dados para o Google Apps Script
-            const response = await fetch(DataManager.GAS_URL + '?action=generatePDF', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: 'data=' + encodeURIComponent(JSON.stringify(reportData))
-            });
-            
-            // Esconder loading
+            const response = await this.sendToGAS(reportData);
             loadingElement.style.display = 'none';
             
-            if (!response.ok) {
-                throw new Error('Erro na resposta do servidor');
-            }
-            
-            const result = await response.json();
-            
-            if (result.success) {
-                // Abrir o PDF em uma nova aba
-                window.open(result.url, '_blank');
+            if (response.success && response.url) {
+                window.open(response.url, '_blank');
                 alert('PDF gerado com sucesso!');
             } else {
-                throw new Error(result.error || 'Erro ao gerar PDF');
+                throw new Error(response.error || 'Erro ao gerar PDF');
             }
-            
         } catch (error) {
             console.error('Erro ao gerar PDF:', error);
-            this.fallbackPrint();
+            loadingElement.style.display = 'none';
+            this.generateLocalPDF(reportData);
         }
     },
     
-    // Salvar todos os dados da interface antes de gerar PDF
-    saveAllCurrentData() {
-        DataManager.itemsData.forEach((item, index) => {
-            const updatedQtyInput = document.getElementById(`updatedQty-${index}`);
-            const purchaseQtyInput = document.getElementById(`purchaseQty-${index}`);
-            
-            if (updatedQtyInput) {
-                const updatedQty = parseInt(updatedQtyInput.value) || item.currentStock;
-                item.updatedStock = updatedQty;
-            }
-            
-            if (purchaseQtyInput) {
-                const purchaseQty = parseInt(purchaseQtyInput.value) || 0;
-                item.purchaseQty = purchaseQty;
-            }
+    // Enviar para Google Apps Script
+    async sendToGAS(reportData) {
+        const formData = new FormData();
+        formData.append('data', JSON.stringify(reportData));
+        
+        const response = await fetch(`${AppConfig.GAS_URL}?action=generatePDF`, {
+            method: 'POST',
+            body: formData
         });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+        
+        return await response.json();
     },
     
-    // Fallback para impressão do navegador
-    fallbackPrint() {
-        if (confirm('Não foi possível gerar o PDF automaticamente. Deseja usar a impressão do navegador?')) {
-            // Criar uma versão para impressão com todos os itens
-            this.createPrintableVersion();
+    // Gerar PDF local (imprimir)
+    generateLocalPDF(reportData) {
+        if (confirm('Para gerar PDF, use a impressão do navegador. Deseja continuar?')) {
+            // Criar versão para impressão
+            this.createPrintableVersion(reportData);
             
-            // Esperar um momento para renderizar
+            // Aguardar renderização e imprimir
             setTimeout(() => {
                 window.print();
                 
-                // Restaurar a interface original
+                // Restaurar após impressão
                 setTimeout(() => {
                     TableRenderer.renderTable();
-                }, 1000);
-            }, 500);
-        } else {
-            alert('Erro ao gerar PDF. Tente novamente mais tarde.');
+                }, 500);
+            }, 300);
         }
     },
     
-    // Criar versão para impressão com todos os itens
-    createPrintableVersion() {
+    // Criar versão para impressão
+    createPrintableVersion(reportData) {
         const tableContainer = document.getElementById('tableContainer');
-        let printableHTML = `
-            <div class="print-header">
-                <h2>RELATÓRIO COMPLETO DE ESTOQUE</h2>
-                <p>Data: ${document.getElementById('reportDate').value}</p>
-                <p>Total de Itens: ${DataManager.itemsData.length}</p>
-            </div>
-            <table>
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Item</th>
-                        <th>Estoque Atual</th>
-                        <th>Mínimo</th>
-                        <th>Qtd. Atualizada</th>
-                        <th>Qtd. Comprar</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody>
+        const date = new Date(reportData.date).toLocaleDateString('pt-BR');
+        
+        let html = `
+            <div style="font-family: Arial, sans-serif; padding: 20px;">
+                <div style="text-align: center; margin-bottom: 30px;">
+                    <h2>RELATÓRIO DE ESTOQUE</h2>
+                    <p><strong>Data:</strong> ${date}</p>
+                    <p><strong>Total de Itens:</strong> ${reportData.totalItems}</p>
+                    <p><strong>Itens para Repor:</strong> ${reportData.itemsToReorder}</p>
+                </div>
+                
+                <table border="1" cellpadding="8" cellspacing="0" style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                    <thead>
+                        <tr style="background-color: #f2f2f2;">
+                            <th>ID</th>
+                            <th>Item</th>
+                            <th>Estoque Atual</th>
+                            <th>Mínimo</th>
+                            <th>Qtd. Atualizada</th>
+                            <th>Qtd. Comprar</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
         `;
         
-        DataManager.itemsData.forEach((item, index) => {
-            const needsReorder = (item.updatedStock || item.currentStock) <= item.minStock;
+        reportData.items.forEach(item => {
+            const currentValue = item.updatedStock || item.currentStock;
+            const needsReorder = currentValue <= item.minStock;
             
-            printableHTML += `
-                <tr class="${needsReorder ? 'needs-reorder' : ''}">
+            html += `
+                <tr style="${needsReorder ? 'background-color: #ffebee;' : ''}">
                     <td>${item.id}</td>
                     <td>${item.name}</td>
                     <td>${item.currentStock}</td>
                     <td>${item.minStock}</td>
-                    <td>${item.updatedStock || item.currentStock}</td>
+                    <td>${currentValue}</td>
                     <td>${item.purchaseQty || 0}</td>
-                    <td>
-                        ${needsReorder ? 
-                            '<i class="fas fa-exclamation-triangle" style="color:#e74c3c;"></i> Repor' : 
-                            '<i class="fas fa-check" style="color:#2ecc71;"></i> OK'}
-                    </td>
+                    <td>${needsReorder ? 'REPOR' : 'OK'}</td>
                 </tr>
             `;
         });
         
-        // Adicionar resumo
-        const itemsToReorder = DataManager.itemsData.filter(item => {
-            const currentValue = item.updatedStock || item.currentStock;
-            return currentValue <= item.minStock;
-        }).length;
-        
-        printableHTML += `
-                </tbody>
-            </table>
-            <div class="print-summary" style="margin-top: 30px; page-break-before: always;">
-                <h3>RESUMO DO RELATÓRIO</h3>
-                <p>Total de itens: ${DataManager.itemsData.length}</p>
-                <p>Itens que necessitam reposição: ${itemsToReorder}</p>
-                <p>Data de geração: ${new Date().toLocaleString()}</p>
+        html += `
+                    </tbody>
+                </table>
+                
+                <div style="margin-top: 50px; padding-top: 20px; border-top: 2px solid #000;">
+                    <div style="float: left; width: 50%;">
+                        <p><strong>Data do Relatório:</strong></p>
+                        <p>${date}</p>
+                    </div>
+                    <div style="float: right; width: 50%; text-align: center;">
+                        <p>_________________________________</p>
+                        <p><strong>Assinatura do Responsável</strong></p>
+                    </div>
+                    <div style="clear: both;"></div>
+                </div>
             </div>
         `;
         
-        tableContainer.innerHTML = printableHTML;
+        tableContainer.innerHTML = html;
     }
 };
