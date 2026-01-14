@@ -33,8 +33,6 @@ body {
 .logo-placeholder {
     width: 200px;
     height: 80px;
-    background-color: #4a6fa5;
-    color: white;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -42,6 +40,14 @@ body {
     border-radius: 5px;
     font-weight: bold;
     font-size: 24px;
+    background-color: #f8f9fa;
+    border: 1px solid #eaeaea;
+}
+
+.logo-image {
+    max-height: 70px;
+    max-width: 180px;
+    object-fit: contain;
 }
 
 .title {

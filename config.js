@@ -1,7 +1,7 @@
 // config.js - Configurações da aplicação
 const AppConfig = {
     // URL do Google Apps Script (mantenha a sua)
-    GAS_URL: 'https://script.google.com/macros/s/AKfycbxvbJ1hDZKFEub-icfkECNE_TJQo3xkxlap8hsKSfvFkcbekLfkctkcel3uX3QV8Nnh7A/exec',
+    GAS_URL: 'https://script.google.com/macros/s/AKfycbyk3Ra6onktTwcgfR5VD-7VmHjs7TjZy4ZtFeyyWFkanVBiWKz0KnD8V-FJjGEDfpLj0w/exec',
     
     // Configurações
     ITEMS_PER_PAGE: 20,
