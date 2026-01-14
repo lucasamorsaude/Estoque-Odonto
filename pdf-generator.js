@@ -51,7 +51,7 @@ const PDFGenerator = {
             
             doc.setFont('helvetica', 'normal');
             doc.setFontSize(10);
-            doc.text(`Relatorio gerado em: ${date}`, pageWidth / 2, headerY + 14, { align: 'center' });
+            doc.text(`Relatório gerado em: ${date}`, pageWidth / 2, headerY + 14, { align: 'center' });
             
             if (pageNumber > 1) {
                 doc.setFontSize(9);
@@ -99,7 +99,7 @@ const PDFGenerator = {
                 'ID',
                 'Item',
                 'Estoque Atual',
-                'Minimo',
+                'Mínimo',
                 'Qtd. Atualizada',
                 'Qtd. Comprar',
                 'Status'
@@ -139,7 +139,7 @@ const PDFGenerator = {
         
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(10);
-        doc.text('Data do Relatorio:', marginX, footerY);
+        doc.text('Data do Relatório:', marginX, footerY);
         doc.text(date, marginX, footerY + 5);
         
         const signatureX = pageWidth / 2 + 10;
