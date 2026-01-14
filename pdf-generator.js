@@ -32,7 +32,13 @@ const PDFGenerator = {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
         
-        const date = new Date(reportData.date || new Date()).toLocaleDateString('pt-BR');
+        const rawDate = reportData.date || new Date();
+        // Adiciona o horário se for uma string para evitar o fuso horário UTC
+        const dateObj = typeof rawDate === 'string' && !rawDate.includes('T') 
+            ? new Date(rawDate + 'T00:00:00') 
+            : new Date(rawDate);
+
+        const date = dateObj.toLocaleDateString('pt-BR');
         const fileName = `Relatorio_Estoque_${date.replace(/\//g, '-')}.pdf`;
         const logoData = await this.loadImageAsDataUrl('icon.png');
         
